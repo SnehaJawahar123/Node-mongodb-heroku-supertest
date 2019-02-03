@@ -1,0 +1,97 @@
+var expect = require('expect');
+var request = require('supertest');
+var {ObjectID} = require('mongodb');
+
+var {app} = require('./../server');
+var {note} = require('./../models/notes');
+
+var seedNotes = [{
+    _id: new ObjectID(),
+    text:'First seed note',
+},{
+    _id: new ObjectID(),
+    text:'Second seed note'
+}]
+
+beforeEach((done)=>{
+    note.remove({}).then(()=>{
+        return note.insertMany(seedNotes);
+    }).then(()=> done());
+})
+
+describe('POST notes',()=>{
+    it('should create a new to do', (done)=>{
+        text = 'Eat well';
+        request(app)
+        .post('/createTodo')
+        .send({text})
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.text).toBe(text);
+        })
+        .end((err,res)=>{
+            if(err){
+                return done(err);
+            }
+            note.find({text}).then((doc)=>{
+                expect(doc[0].text).toBe(text);
+                done();
+            }).catch((e)=>done(e));
+        })
+    });
+
+    it('should not create notes with invalid data',(done)=>{
+        request(app)
+        .post('/createTodo')
+        .send({})
+        .expect(400)
+        .end((err,res)=>{
+            if(err){
+                return done(err);
+            }
+            note.find().then((doc)=>{
+                expect(doc[2]).toEqual(undefined);
+                expect(doc.length).toBe(2);
+                done();
+            }).catch((e)=>done(e))
+        })
+    })
+});
+
+describe('GET notes',(done)=>{
+    it('should get all notes',(done)=>{
+        request(app)
+        .get('/getAllTodo')
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.docs.length).toBe(2)
+        })
+        .end(done)
+    })
+})
+
+describe('GET note by id',(done)=>{
+    it('should get the note for the id',(done)=>{
+        request(app)
+        .get(`/getTodoById/${seedNotes[0]._id.toHexString()}`)
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.doc.text).toBe(seedNotes[0].text)
+        })
+        .end(done)
+    })
+
+    it('should return 404 if id not found',(done)=>{
+        request(app)
+        .get(`/getTodoById/${new ObjectID()}`)
+        .expect(404)
+        .end(done)
+    })
+
+    it('should return 400 for invalid id',(done)=>{
+        request(app)
+        .get(`/getTodoById/123`)
+        .expect(400)
+        .end(done)
+    })
+})
