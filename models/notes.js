@@ -9,7 +9,7 @@ var note = mongoose.model('note',{
         type: Boolean
     },
     completedAt:{
-        type: Date
+        type: Number
     }
 })
 

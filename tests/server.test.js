@@ -10,7 +10,9 @@ var seedNotes = [{
     text:'First seed note',
 },{
     _id: new ObjectID(),
-    text:'Second seed note'
+    text:'Second seed note',
+    completed: true,
+    completedAt: 333
 }]
 
 beforeEach((done)=>{
@@ -128,5 +130,52 @@ describe('Delete ToDo Api', (done)=>{
         .delete(`/deletById/${id}`)
         .expect(400)
         .end(done)
+    })
+})
+
+describe('PATCH todo APIs',(done)=>{
+    it('should update the todo',(done)=>{
+        var id = seedNotes[0]._id.toHexString();
+        var toDo = {
+            "text" : "Updated from test suite 1",
+            "completed" : true
+        }
+        request(app)
+        .patch(`/updateToDo/${id}`)
+        .send({toDo})
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.completedAt).toBeTruthy();
+            expect(res.body.text).toBe(toDo.text);
+        })
+        
+        .end((err, res)=>{
+            if(err){
+                return(done(err))
+            }
+
+            note.findById(id).then((doc)=>{
+                expect(doc.text).toBe(toDo.text);
+                done()
+            }).catch((e)=> done(e))
+        })
+    })
+
+    it('should set completed at as null if completed is false',(done)=>{
+        var id = seedNotes[1]._id.toHexString();
+        var toDo = {
+            "text" : "Updated from test suite 2",
+            "completed" : false
+        }
+        request(app)
+        .patch(`/updateToDo/${id}`)
+        .send({toDo})
+        .expect(200)
+        .expect((res)=>{
+            expect(res.body.completedAt).toBeFalsy();
+            expect(res.body.text).toBe(toDo.text);
+        })
+        .end(done)
+        
     })
 })
