@@ -45,6 +45,23 @@ app.get('/getTodoById/:id',(req,res)=>{
     
 })
 
+app.delete('/deletById/:id',(req,res)=>{
+    var id = req.params.id;
+    if(!ObjectID.isValid(id)){
+        return res.status(400).send('Invalid Id');
+    }
+    else{
+        note.findByIdAndDelete(id).then((result)=>{
+            if(result != null){
+                return res.status(200).send(result);
+            }
+        res.status(404).send('No document found for data')
+        }).catch((e)=>{
+            res.status(400).send(e);
+        })
+    }
+})
+
 app.listen(port,()=>{
     console.log(`App running on port ${port}`);
 })

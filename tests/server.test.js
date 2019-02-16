@@ -95,3 +95,38 @@ describe('GET note by id',(done)=>{
         .end(done)
     })
 })
+
+describe('Delete ToDo Api', (done)=>{
+    it('Should delete todo by id',(done)=>{
+        var id = seedNotes[0]._id.toHexString();
+        request(app)
+        .delete(`/deletById/${id}`)
+        .expect(200)
+        .end((err,res)=>{
+            if(err){
+                return done(err);
+            }
+
+            note.findById(id).then((doc)=>{
+                expect(doc).toBeFalsy();
+                done();
+            }).catch((e)=>done(e))
+        })
+    })
+
+    it('Should return 404 when no todo is present',(done)=>{
+        var id = '5c66fd0c4dd97cbf83f65d17';
+        request(app)
+        .delete(`/deletById/${id}`)
+        .expect(404)
+        .end(done)
+    })
+  
+    it('Should return 400 when id is invalid',(done)=>{
+        var id = 'abc2345';
+        request(app)
+        .delete(`/deletById/${id}`)
+        .expect(400)
+        .end(done)
+    })
+})
