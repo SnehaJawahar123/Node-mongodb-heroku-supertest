@@ -1,6 +1,7 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var {ObjectID} = require('mongodb');
+var _ = require('lodash');
 
 var {mongoose} = require('./db/mongoose');
 var {note} = require('./models/notes');
@@ -60,6 +61,33 @@ app.delete('/deletById/:id',(req,res)=>{
             res.status(400).send(e);
         })
     }
+})
+
+app.patch('/updateToDo/:id',(req,res)=>{
+    var id = req.params.id;
+    if(!_.has(req.body,'toDo')){
+        return res.status(400).send('No request present');
+    }
+    var body = _.pick(req.body.toDo, ['text','completed']);
+    if(!ObjectID.isValid(id)){
+        return res.status(400).send('Invalid Id');
+    }
+     if(_.isBoolean(body.completed) && body.completed){
+         body.completedAt = new Date().getTime();
+     }
+     else{
+         body.completed = false;
+         body.completedAt = null;
+     }
+     note.findByIdAndUpdate(id, {$set : body}, {new : true}).then((doc)=>{
+         if(!doc){
+             return res.status(404).send('Todo with this id does not exist');
+         }
+        res.status(200).send(doc);
+     }).catch((e)=>{
+        res.status(400).send(e);
+     })
+
 })
 
 app.listen(port,()=>{
